@@ -1,11 +1,16 @@
+import json
 import requests
 from lxml import html
-username = ''
-password = ''
+from datetime import datetime
 
 
-def fetch_overview():
-    url = "https://citychurchbris.churchapp.co.uk/modules/rotas/reports/rotas_overview.php?return_url=%2Fmodules%2Frotas%2Freports%2Findex.php&date_start=04-01-2016&date_end=16-12-2016&ministries%5B%5D=1&ministries%5B%5D=22&ministries%5B%5D=10&ministries%5B%5D=21&ministries%5B%5D=25&ministries%5B%5D=9&ministries%5B%5D=8&order_by=default&submit_btn=Generate"
+def fetch_overview(username, password, year=None):
+    if year is None:
+        year = datetime.today().year
+    fromdate = '01-01-{}'.format(year)
+    todate = '01-01-{}'.format(year+1)
+
+    report_url = "https://citychurchbris.churchapp.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
     login_url = "https://login.churchapp.co.uk/"
     s = requests.Session()
     s.post(
@@ -19,14 +24,18 @@ def fetch_overview():
             'churchapp_login_account': 'citychurchbris'
         }
     )
+    response = s.get(report_url.format(
+        fromdate=fromdate,
+        todate=todate,
+    ))
 
-    response = s.get(
-        url,
-    )
     return response.text
 
+
 if __name__ == "__main__":
-    overview = fetch_overview()
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+    overview = fetch_overview(config['username'], config['password'])
     tree = html.fromstring(overview)
     people = tree.cssselect('.rota-subsection a.profile span.profile-name')
     for person in people:
