@@ -1,3 +1,6 @@
 cssselect==1.0.0
 lxml==3.7.0
+python-dateutil==2.6.0
 requests==2.12.4
+six==1.10.0
+tablib==0.11.4
