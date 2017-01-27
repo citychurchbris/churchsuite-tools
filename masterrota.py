@@ -79,6 +79,9 @@ def parse_data(text):
                 for role, name in list(rota.items()):
                     if 'leader' in role.lower():
                         names.append(name)
+                if not names:
+                    # No leader match - just use first person
+                    names.append(list(rota.values())[0])
             row.append(', '.join(names))
         dataset.append(row)
     return dataset
