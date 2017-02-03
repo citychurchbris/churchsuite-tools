@@ -3,16 +3,24 @@ import json
 import sys
 import requests
 import tablib
+import drive
 from lxml import html
 from datetime import datetime
+from datetime import timedelta
 import dateutil.parser
+
+CA_DATE_FORMAT = '%d-%m-%Y'
 
 
 def fetch_overview(churchname, username, password, year=None):
     if year is None:
-        year = datetime.today().year
-    fromdate = '01-01-{}'.format(year)
-    todate = '01-01-{}'.format(year+1)
+        now = datetime.now()
+        fromdate = datetime.now().strftime(CA_DATE_FORMAT)
+        todate = (now + timedelta(days=365)).strftime(CA_DATE_FORMAT)
+    else:
+        fromdate = '01-01-{}'.format(year)
+        todate = '01-01-{}'.format(year+1)
+    print('Fetching rotas from {} to {}'.format(fromdate, todate))
 
     report_url = "https://{churchname}.churchapp.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
     login_url = "https://login.churchapp.co.uk/"
@@ -42,6 +50,7 @@ def grab_text(el, selector):
 
 
 def parse_data(text):
+    print('Parsing...')
     master = []
     team_names = []
     tree = html.fromstring(text)
@@ -87,6 +96,26 @@ def parse_data(text):
     return dataset
 
 
+def write_data(dataset, sheetid):
+    print('Updating Google Sheet...')
+    service = drive.get_service()
+    range_name = "Overview"
+    values = [dataset.headers, ]
+
+    for row in dataset:
+        cols = [str(x) for x in row]
+        values.append(cols)
+
+    body = {
+        'values': values
+    }
+    service.spreadsheets().values().update(
+        spreadsheetId=sheetid,
+        body=body,
+        valueInputOption='USER_ENTERED',
+        range=range_name).execute()
+
+
 if __name__ == "__main__":
     with open('config.json', 'r') as f:
         config = json.load(f)
@@ -98,4 +127,5 @@ if __name__ == "__main__":
             config['username'],
             config['password'])
     dataset = parse_data(overview)
-    open('out.csv', 'w').write(dataset.csv)
+    write_data(dataset, config['google_sheet_id'])
+    #open('out.csv', 'w').write(dataset.csv)
