@@ -16,7 +16,6 @@ except ImportError:
 # at ~/.credentials/drive-python-quickstart.json
 # CHANGE THIS SCOPE once file is created
 SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
-# SCOPES = 'https://www.googleapis.com/auth/drive.file'
 CLIENT_SECRET_FILE = 'drive_client_secret.json'
 APPLICATION_NAME = 'ChurchApp Master Rota'
 

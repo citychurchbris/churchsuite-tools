@@ -10,6 +10,7 @@ from datetime import timedelta
 import dateutil.parser
 
 CA_DATE_FORMAT = '%d-%m-%Y'
+SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
 
 
 def fetch_overview(churchname, username, password, year=None):
@@ -36,12 +37,13 @@ def fetch_overview(churchname, username, password, year=None):
             'churchapp_login_account': churchname
         }
     )
-    response = s.get(report_url.format(
+    url = report_url.format(
         churchname=churchname,
         fromdate=fromdate,
         todate=todate,
-    ))
-
+    )
+    print('Running report: {}'.format(url))
+    response = s.get(url)
     return response.text
 
 
@@ -62,6 +64,10 @@ def parse_data(text):
         date_rotas = {}
         datetext = el.text_content()
         thedate = dateutil.parser.parse(datetext)
+        # We only care about sundays at the moment
+        if thedate.weekday() != 6:
+            continue
+
         rotas = el.getparent().cssselect('div.rota-date')
         for rota in rotas:
             team = grab_text(rota, 'span.date-team')
@@ -100,7 +106,11 @@ def write_data(dataset, sheetid):
     print('Updating Google Sheet...')
     service = drive.get_service()
     range_name = "Overview"
-    values = [dataset.headers, ]
+    timestamp = get_timestamp()
+    values = [
+        ['', "Last update: {}".format(timestamp), ],
+        dataset.headers,
+    ]
 
     for row in dataset:
         cols = [str(x) for x in row]
@@ -114,6 +124,11 @@ def write_data(dataset, sheetid):
         body=body,
         valueInputOption='USER_ENTERED',
         range=range_name).execute()
+    print('Changes written to: {}{}'.format(SHEETS_ROOT_URL, sheetid))
+
+
+def get_timestamp():
+    return datetime.now().strftime('%Y-%m-%d %H:%M')
 
 
 if __name__ == "__main__":
@@ -128,4 +143,3 @@ if __name__ == "__main__":
             config['password'])
     dataset = parse_data(overview)
     write_data(dataset, config['google_sheet_id'])
-    #open('out.csv', 'w').write(dataset.csv)
