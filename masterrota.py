@@ -131,7 +131,7 @@ def write_data(dataset, sheetid):
     # write next sunday
     sunday = dataset.dict[0]
     rows = [
-        ['Next Sunday', ],
+        ['Next Sunday', "Last update: {}".format(timestamp), ],
         [sunday['Date'].strftime('%A %d %b %Y'), ],
     ]
     for header in dataset.headers[1:]:
