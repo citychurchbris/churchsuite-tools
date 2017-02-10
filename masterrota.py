@@ -11,6 +11,7 @@ import dateutil.parser
 
 CA_DATE_FORMAT = '%d-%m-%Y'
 SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
+LEAD_ROLES = ['leader', 'preacher', ]
 
 
 def fetch_overview(churchname, username, password, year=None):
@@ -92,8 +93,9 @@ def parse_data(text):
             rota = rotas.get(team_name)
             if rota:
                 for role, name in list(rota.items()):
-                    if 'leader' in role.lower():
-                        names.append(name)
+                    for lead_role in LEAD_ROLES:
+                        if lead_role in role.lower():
+                            names.append(name)
                 if not names:
                     # No leader match - just use all of them
                     names = list(rota.values())
