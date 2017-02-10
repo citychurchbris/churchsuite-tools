@@ -102,10 +102,20 @@ def parse_data(text):
     return dataset
 
 
+def write_to_sheet(rows, sheetid, range_name):
+    body = {
+        'values': rows
+    }
+    service = drive.get_service()
+    service.spreadsheets().values().update(
+        spreadsheetId=sheetid,
+        body=body,
+        valueInputOption='USER_ENTERED',
+        range=range_name).execute()
+
+
 def write_data(dataset, sheetid):
     print('Updating Google Sheet...')
-    service = drive.get_service()
-    range_name = "Overview"
     timestamp = get_timestamp()
     values = [
         ['', "Last update: {}".format(timestamp), ],
@@ -116,14 +126,19 @@ def write_data(dataset, sheetid):
         cols = [str(x) for x in row]
         values.append(cols)
 
-    body = {
-        'values': values
-    }
-    service.spreadsheets().values().update(
-        spreadsheetId=sheetid,
-        body=body,
-        valueInputOption='USER_ENTERED',
-        range=range_name).execute()
+    write_to_sheet(values, sheetid, "Overview")
+
+    # write next sunday
+    sunday = dataset.dict[0]
+    rows = [
+        ['Next Sunday', ],
+        [sunday['Date'].strftime('%A %d %b %Y'), ],
+    ]
+    for header in dataset.headers[1:]:
+        rows.append([header, str(sunday[header])])
+
+    write_to_sheet(rows, sheetid, "Next Sunday")
+
     print('Changes written to: {}{}'.format(SHEETS_ROOT_URL, sheetid))
 
 
