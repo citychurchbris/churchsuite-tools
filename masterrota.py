@@ -14,7 +14,7 @@ SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
 LEAD_ROLES = ['leader', 'preacher', ]
 
 
-def fetch_overview(churchname, username, password, year=None):
+def fetch_overview(churchname, username, password, year=None, siteid=None):
     if year is None:
         now = datetime.now()
         fromdate = datetime.now().strftime(CA_DATE_FORMAT)
@@ -24,6 +24,7 @@ def fetch_overview(churchname, username, password, year=None):
         todate = '01-01-{}'.format(year+1)
     print('Fetching rotas from {} to {}'.format(fromdate, todate))
 
+    site_switcher_url = 'https://citychurchbris.churchapp.co.uk/ajax/site'
     report_url = "https://{churchname}.churchapp.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
     login_url = "https://login.churchapp.co.uk/"
     s = requests.Session()
@@ -38,6 +39,14 @@ def fetch_overview(churchname, username, password, year=None):
             'churchapp_login_account': churchname
         }
     )
+    if siteid is not None:
+        print('Switching site to: {}'.format(siteid))
+        response = s.put(
+            site_switcher_url,
+            data={
+                'site_id': siteid,
+            },
+        )
     url = report_url.format(
         churchname=churchname,
         fromdate=fromdate,
@@ -149,7 +158,11 @@ def get_timestamp():
 
 
 if __name__ == "__main__":
-    with open('config.json', 'r') as f:
+    try:
+        _, configfile = sys.argv
+    except ValueError:
+        configfile = 'config.json'
+    with open(configfile, 'r') as f:
         config = json.load(f)
     if '--test' in sys.argv:
         overview = open('example.html').read()
@@ -157,6 +170,8 @@ if __name__ == "__main__":
         overview = fetch_overview(
             config['churchname'],
             config['username'],
-            config['password'])
+            config['password'],
+            siteid=config.get('site_id', None),
+        )
     dataset = parse_data(overview)
     write_data(dataset, config['google_sheet_id'])
