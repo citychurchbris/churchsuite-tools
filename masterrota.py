@@ -113,16 +113,24 @@ def parse_data(text):
     return dataset
 
 
-def write_to_sheet(rows, sheetid, range_name):
+def write_to_sheet(rows, sheetid, range_name, clear=True):
     body = {
         'values': rows
     }
     service = drive.get_service()
+    if clear:
+        service.spreadsheets().values().clear(
+            spreadsheetId=sheetid,
+            body={},
+            range=range_name
+        ).execute()
+
     service.spreadsheets().values().update(
         spreadsheetId=sheetid,
         body=body,
         valueInputOption='USER_ENTERED',
-        range=range_name).execute()
+        range=range_name
+    ).execute()
 
 
 def write_data(dataset, sheetid):
@@ -133,6 +141,7 @@ def write_data(dataset, sheetid):
         dataset.headers,
     ]
 
+    # Overview
     for row in dataset:
         cols = [str(x) for x in row]
         values.append(cols)
@@ -146,7 +155,9 @@ def write_data(dataset, sheetid):
         [sunday['Date'].strftime('%A %d %b %Y'), ],
     ]
     for header in dataset.headers[1:]:
-        rows.append([header, str(sunday[header])])
+        value = str(sunday[header])
+        if value:
+            rows.append([header, value])
 
     write_to_sheet(rows, sheetid, "Next Sunday")
 
