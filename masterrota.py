@@ -4,6 +4,7 @@ import sys
 import requests
 import tablib
 import drive
+import emails
 from lxml import html
 from datetime import datetime
 from datetime import timedelta
@@ -150,21 +151,38 @@ def write_overview(dataset, sheetid):
     write_to_sheet(values, sheetid, "Overview")
 
 
-def write_next(dataset, sheetid):
+def write_next(dataset, sheetid, notify=None, smtp=None):
     # Next sunday
     print('Updating Next Sunday Sheet...')
     timestamp = get_timestamp()
     sunday = dataset.dict[0]
+    nicedate = sunday['Date'].strftime('%A %d %b %Y')
     rows = [
-        ['Next Sunday', "Last update: {}".format(timestamp), ],
-        [sunday['Date'].strftime('%A %d %b %Y'), ],
+        ('Next Sunday', "Last update: {}".format(timestamp), ),
+        (nicedate, ''),
     ]
     for header in dataset.headers[1:]:
         value = str(sunday[header])
         if value:
-            rows.append([header, value])
+            rows.append((header, value))
 
     write_to_sheet(rows, sheetid, "Next Sunday")
+
+    # Emails
+    if notify and smtp:
+        # Skip first row
+        next_dataset = tablib.Dataset(*rows[2:], headers=rows[1])
+        message = emails.html(
+            html=next_dataset.html,
+            subject='Sunday roles {}'.format(nicedate),
+            mail_from=('ChurchApp Master Rota', smtp.get('user')),
+        )
+        for address in notify:
+            response = message.send(
+                to=address,
+                smtp=smtp,
+            )
+            print('Notifying {} ({})'.format(address, response.status_code))
 
 
 def get_timestamp():
@@ -189,5 +207,10 @@ if __name__ == "__main__":
         )
     dataset = parse_data(overview)
     write_overview(dataset, config['google_sheet_id'])
-    write_next(dataset, config['google_sheet_id'])
+    write_next(
+        dataset,
+        config['google_sheet_id'],
+        notify=config.get('notify'),
+        smtp=config.get('smtp'),
+    )
     print('Done')
