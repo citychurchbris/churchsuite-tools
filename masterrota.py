@@ -131,24 +131,29 @@ def write_to_sheet(rows, sheetid, range_name, clear=True):
         valueInputOption='USER_ENTERED',
         range=range_name
     ).execute()
+    print('Changes written to: {}{}'.format(SHEETS_ROOT_URL, sheetid))
 
 
-def write_data(dataset, sheetid):
-    print('Updating Google Sheet...')
+def write_overview(dataset, sheetid):
+    # Overview
+    print('Updating Overview Sheet...')
     timestamp = get_timestamp()
     values = [
         ['', "Last update: {}".format(timestamp), ],
         dataset.headers,
     ]
 
-    # Overview
     for row in dataset:
         cols = [str(x) for x in row]
         values.append(cols)
 
     write_to_sheet(values, sheetid, "Overview")
 
-    # write next sunday
+
+def write_next(dataset, sheetid):
+    # Next sunday
+    print('Updating Next Sunday Sheet...')
+    timestamp = get_timestamp()
     sunday = dataset.dict[0]
     rows = [
         ['Next Sunday', "Last update: {}".format(timestamp), ],
@@ -160,8 +165,6 @@ def write_data(dataset, sheetid):
             rows.append([header, value])
 
     write_to_sheet(rows, sheetid, "Next Sunday")
-
-    print('Changes written to: {}{}'.format(SHEETS_ROOT_URL, sheetid))
 
 
 def get_timestamp():
@@ -185,4 +188,6 @@ if __name__ == "__main__":
             siteid=config.get('site_id', None),
         )
     dataset = parse_data(overview)
-    write_data(dataset, config['google_sheet_id'])
+    write_overview(dataset, config['google_sheet_id'])
+    write_next(dataset, config['google_sheet_id'])
+    print('Done')
