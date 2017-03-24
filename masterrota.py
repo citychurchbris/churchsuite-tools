@@ -191,9 +191,14 @@ def get_timestamp():
 
 if __name__ == "__main__":
     try:
-        _, configfile = sys.argv
-    except ValueError:
+        configfile = sys.argv[1]
+    except IndexError:
         configfile = 'config.json'
+    if '--notify' in sys.argv:
+        notify = True
+    else:
+        notify = False
+
     with open(configfile, 'r') as f:
         config = json.load(f)
     if '--test' in sys.argv:
@@ -210,7 +215,7 @@ if __name__ == "__main__":
     write_next(
         dataset,
         config['google_sheet_id'],
-        notify=config.get('notify'),
+        notify=notify and config.get('notify'),
         smtp=config.get('smtp'),
     )
     print('Done')
