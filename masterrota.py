@@ -24,7 +24,7 @@ def fetch_overview(churchname, username, password, year=None, siteid=None):
         todate = '01-01-{}'.format(year+1)
     print('Fetching rotas from {} to {}'.format(fromdate, todate))
 
-    site_switcher_url = 'https://citychurchbris.churchapp.co.uk/ajax/site'
+    site_switcher_url = 'https://{churchname}.churchapp.co.uk/ajax/site'
     report_url = "https://{churchname}.churchapp.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
     login_url = "https://login.churchapp.co.uk/"
     s = requests.Session()
@@ -42,7 +42,7 @@ def fetch_overview(churchname, username, password, year=None, siteid=None):
     if siteid is not None:
         print('Switching site to: {}'.format(siteid))
         response = s.put(
-            site_switcher_url,
+            site_switcher_url.format(churchname=churchname),
             data={
                 'site_id': siteid,
             },
