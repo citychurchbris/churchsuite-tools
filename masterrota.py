@@ -151,12 +151,12 @@ def write_overview(dataset, sheetid):
     write_to_sheet(values, sheetid, "Overview")
 
 
-def write_next(dataset, sheetid, notify=None, smtp=None):
+def write_next(dataset, sheetid, churchname, notify=None, smtp=None):
     # Next sunday
     print('Updating Next Sunday Sheet...')
     timestamp = get_timestamp()
     sunday = dataset.dict[0]
-    nicedate = sunday['Date'].strftime('%A %d %b %Y')
+    nicedate = sunday['Date'].strftime('%A %d %b %Y').replace(" 0", " ")
     rows = [
         ('Next Sunday', "Last update: {}".format(timestamp), ),
         (nicedate, ''),
@@ -171,10 +171,31 @@ def write_next(dataset, sheetid, notify=None, smtp=None):
     # Emails
     if notify and smtp:
         # Skip first row
-        next_dataset = tablib.Dataset(*rows[2:], headers=rows[1])
+        next_dataset = tablib.Dataset(
+            *rows[3:],
+            headers=('Rota', 'People'))
+        html = """<style>th, td {{ border-bottom: 1px solid #ccc }}</style>
+<p><em>This is an automated email generated from all rotas on <a href="{churchappurl}">{churchappurl}</a></em></p>
+<p>
+<b>{nicedate}</b>
+</p>
+
+{table}
+
+<p><em>
+  You can <a href="{churchappurl}">update these rotas in ChurchApp</a>
+</em></p>
+<p><em>
+  Further detail on all rotas is available in <a href="{sheeturl}">this google sheet</a>
+</em></p>
+""".format(table=next_dataset.html,
+           churchappurl='https://{}.churchapp.co.uk/modules/rotas/'.format(
+               churchname),
+           sheeturl=SHEETS_ROOT_URL + sheetid,
+           nicedate=nicedate)
         message = emails.html(
-            html=next_dataset.html,
-            subject='Sunday roles {}'.format(nicedate),
+            html=html,
+            subject='Sunday Roles {}'.format(nicedate),
             mail_from=('ChurchApp Master Rota', smtp.get('user')),
         )
         for address in notify:
@@ -215,6 +236,7 @@ if __name__ == "__main__":
     write_next(
         dataset,
         config['google_sheet_id'],
+        config['churchname'],
         notify=notify and config.get('notify'),
         smtp=config.get('smtp'),
     )
