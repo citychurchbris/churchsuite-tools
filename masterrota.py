@@ -157,22 +157,22 @@ def write_next(dataset, sheetid, churchname, notify=None, smtp=None):
     timestamp = get_timestamp()
     sunday = dataset.dict[0]
     nicedate = sunday['Date'].strftime('%A %d %b %Y').replace(" 0", " ")
-    rows = [
+    header_rows = [
         ('Next Sunday', "Last update: {}".format(timestamp), ),
         (nicedate, ''),
     ]
+    rows = []
     for header in dataset.headers[1:]:
         value = str(sunday[header])
         if value:
             rows.append((header, value))
 
-    write_to_sheet(rows, sheetid, "Next Sunday")
+    write_to_sheet(header_rows + rows, sheetid, "Next Sunday")
 
     # Emails
     if notify and smtp:
-        # Skip first row
         next_dataset = tablib.Dataset(
-            *rows[3:],
+            *rows,
             headers=('Rota', 'People'))
         html = """<style>th, td {{ border-bottom: 1px solid #ccc }}</style>
 <p><em>This is an automated email generated from all rotas on <a href="{churchappurl}">{churchappurl}</a></em></p>
