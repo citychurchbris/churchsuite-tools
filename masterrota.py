@@ -196,7 +196,7 @@ def write_next(dataset, sheetid, churchname, notify=None, smtp=None):
         message = emails.html(
             html=html,
             subject='Sunday Roles {}'.format(nicedate),
-            mail_from=('ChurchApp Master Rota', smtp.get('user')),
+            mail_from=smtp.get('user'),
         )
         for address in notify:
             response = message.send(
