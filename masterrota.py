@@ -174,7 +174,7 @@ def write_next(dataset, sheetid, churchname, notify=None, smtp=None):
         next_dataset = tablib.Dataset(
             *rows,
             headers=('Rota', 'People'))
-        html = """<style>th, td {{ border-bottom: 1px solid #ccc }}</style>
+        html = """<style>th, td {{ border-bottom: 1px solid #ccc; padding: 3px; }}</style>
 <p><em>This is an automated email generated from all rotas on <a href="{churchappurl}">{churchappurl}</a></em></p>
 <p>
 <b>{nicedate}</b>
@@ -201,7 +201,13 @@ def write_next(dataset, sheetid, churchname, notify=None, smtp=None):
         for address in notify:
             response = message.send(
                 to=address,
-                smtp=smtp,
+                smtp={
+                    "host": smtp.get('host'),
+                    "ssl": smtp.get('ssl', False),
+                    "port": smtp.get('port', 25),
+                    "user": smtp.get('user', None),
+                    "password": smtp.get('password', None),
+                    }
             )
             print('Notifying {} ({})'.format(address, response.status_code))
 
