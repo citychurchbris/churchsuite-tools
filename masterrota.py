@@ -151,7 +151,8 @@ def write_overview(dataset, sheetid):
     write_to_sheet(values, sheetid, "Overview")
 
 
-def write_next(dataset, sheetid, churchname, notify=None, smtp=None):
+def write_next(dataset, sheetid, churchname,
+               site_name, notify=None, smtp=None):
     # Next sunday
     print('Updating Next Sunday Sheet...')
     timestamp = get_timestamp()
@@ -195,7 +196,7 @@ def write_next(dataset, sheetid, churchname, notify=None, smtp=None):
            nicedate=nicedate)
         message = emails.html(
             html=html,
-            subject='Sunday Roles {}'.format(nicedate),
+            subject='[{}] Sunday Roles {}'.format(site_name, nicedate),
             mail_from=smtp.get('user'),
         )
         for address in notify:
@@ -220,7 +221,8 @@ if __name__ == "__main__":
     try:
         configfile = sys.argv[1]
     except IndexError:
-        configfile = 'config.json'
+        print('Please provide a JSON config file')
+        sys.exit(1)
     if '--notify' in sys.argv:
         notify = True
     else:
@@ -243,6 +245,7 @@ if __name__ == "__main__":
         dataset,
         config['google_sheet_id'],
         config['churchname'],
+        config['site_name'],
         notify=notify and config.get('notify'),
         smtp=config.get('smtp'),
     )
