@@ -25,16 +25,16 @@ def fetch_overview(churchname, username, password, year=None, siteid=None):
         todate = '01-01-{}'.format(year+1)
     print('Fetching rotas from {} to {}'.format(fromdate, todate))
 
-    site_switcher_url = 'https://{churchname}.churchapp.co.uk/ajax/site'
-    report_url = "https://{churchname}.churchapp.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
-    login_url = "https://login.churchapp.co.uk/"
+    site_switcher_url = 'https://{churchname}.churchsuite.co.uk/ajax/site'
+    report_url = "https://{churchname}.churchsuite.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
+    login_url = "https://login.churchsuite.com/"
     s = requests.Session()
     s.post(
         login_url,
         data={
             'username': username,
             'password': password,
-            'system': 'churchapp',
+            'system': 'churchsuite',
             },
         cookies={
             'churchapp_login_account': churchname
@@ -176,7 +176,7 @@ def write_next(dataset, sheetid, churchname,
             *rows,
             headers=('Rota', 'People'))
         html = """<style>th, td {{ border-bottom: 1px solid #ccc; padding: 3px; }}</style>
-<p><em>This is an automated email generated from all rotas on <a href="{churchappurl}">{churchappurl}</a></em></p>
+<p><em>This is an automated email generated from all rotas on <a href="{churchsuiteurl}">{churchsuiteurl}</a></em></p>
 <p>
 <b>{nicedate}</b>
 </p>
@@ -184,13 +184,13 @@ def write_next(dataset, sheetid, churchname,
 {table}
 
 <p><em>
-  You can <a href="{churchappurl}">update these rotas in ChurchApp</a>
+  You can <a href="{churchsuiteurl}">update these rotas in ChurchSuite</a>
 </em></p>
 <p><em>
   Further detail on all rotas is available in <a href="{sheeturl}">this google sheet</a>
 </em></p>
 """.format(table=next_dataset.html,
-           churchappurl='https://{}.churchapp.co.uk/modules/rotas/'.format(
+           churchsuiteurl='https://{}.churchsuite.co.uk/modules/rotas/'.format(
                churchname),
            sheeturl=SHEETS_ROOT_URL + sheetid,
            nicedate=nicedate)
