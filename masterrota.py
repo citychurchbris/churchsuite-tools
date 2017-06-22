@@ -29,17 +29,20 @@ def fetch_overview(churchname, username, password, year=None, siteid=None):
     report_url = "https://{churchname}.churchsuite.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
     login_url = "https://login.churchsuite.com/"
     s = requests.Session()
-    s.post(
+    login_response = s.post(
         login_url,
         data={
             'username': username,
             'password': password,
-            'system': 'churchsuite',
+            'system': 'admin',
             },
         cookies={
             'churchapp_login_account': churchname
         }
     )
+    if login_response.url == login_url:
+        print('Error - login failed!')
+        sys.exit(1)
     if siteid is not None:
         print('Switching site to: {}'.format(siteid))
         response = s.put(
