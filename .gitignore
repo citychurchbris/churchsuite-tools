@@ -1,6 +1,5 @@
 venv
-config.json
-config*.json
+*.json
 .credentials
 example.html
 drive_client_secret.json
