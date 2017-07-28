@@ -26,8 +26,9 @@ myconfig.json:
 """
 import json
 import sys
-import requests
+
 import emails
+import requests
 
 API_ROOT = 'https://api.churchsuite.co.uk/v1'
 CONTACT_URL_TEMPLATE = (
@@ -137,14 +138,16 @@ if __name__ == "__main__":
     data = search_tag(config)
     contacts = data['contacts']
     tag_name = data['name']
-    total = len(contacts)
+
+    total = int(data['no_contacts'] or 0)
     if total <= 0:
         print('No contacts found for tag: {}'.format(
             tag_name,
         ))
-    print('Found {} contacts for tag: {}'.format(
-        total,
-        tag_name,
-    ))
-    notify(config, tag_name, contacts)
+    else:
+        print('Found {} contacts for tag: {}'.format(
+            total,
+            tag_name,
+        ))
+        notify(config, tag_name, contacts)
     print('Done')
