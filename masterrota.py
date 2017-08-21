@@ -1,14 +1,15 @@
 #!/usr/bin/python3
 import json
 import sys
+from datetime import datetime, timedelta
+
+import dateutil.parser
+import emails
 import requests
 import tablib
-import drive
-import emails
 from lxml import html
-from datetime import datetime
-from datetime import timedelta
-import dateutil.parser
+
+import drive
 
 CA_DATE_FORMAT = '%d-%m-%Y'
 SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
@@ -201,7 +202,11 @@ def write_next(dataset, sheetid, churchname,
             html=html,
             subject='[{}] Sunday Roles {}'.format(site_name, nicedate),
             mail_from=smtp.get('user'),
-        )
+            headers={
+                'X-Mailer': 'ChurchSuite Master Rota',
+                'X-Auto-Response-Suppress': (
+                    'DR, NDR, RN, NRN, OOF, AutoReply'),
+            })
         for address in notify:
             response = message.send(
                 to=address,
