@@ -10,6 +10,7 @@ import tablib
 from lxml import html
 
 import drive
+from terminaltables import AsciiTable
 
 CA_DATE_FORMAT = '%d-%m-%Y'
 SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
@@ -155,6 +156,11 @@ def write_overview(dataset, sheetid):
     write_to_sheet(values, sheetid, "Overview")
 
 
+def display_rows(rows):
+    table = AsciiTable(rows)
+    print(table.table)
+
+
 def write_next(dataset, sheetid, churchname,
                site_name, notify=None, smtp=None):
     # Next sunday
@@ -173,6 +179,7 @@ def write_next(dataset, sheetid, churchname,
             rows.append((header, value))
 
     write_to_sheet(header_rows + rows, sheetid, "Next Sunday")
+    display_rows(header_rows + rows)
 
     # Emails
     if notify and smtp:
