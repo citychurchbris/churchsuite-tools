@@ -15,6 +15,15 @@ from terminaltables import AsciiTable
 CA_DATE_FORMAT = '%d-%m-%Y'
 SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
 LEAD_ROLES = ['leader', 'preacher', ]
+EXCLUDE_ROLES = ['reserve', ]
+
+
+def is_leader_role(role):
+    role = role.lower()
+    for lrole in LEAD_ROLES:
+        if lrole in role:
+            return True
+    return False
 
 
 def fetch_overview(churchname, username, password, year=None, siteid=None):
@@ -89,12 +98,15 @@ def parse_data(text):
             team = grab_text(rota, 'span.date-team')
             if team not in team_names:
                 team_names.append(team)
-            date_rotas[team] = {}
+            date_rotas[team] = []
             members = rota.cssselect('ul.date-members li.profile-initial')
             for member in members:
                 name = grab_text(member, '.profile-name')
                 role = grab_text(member, '.roles')
-                date_rotas[team][role] = name
+                date_rotas[team].append({
+                    'name': name,
+                    'role': role,
+                    })
         master.append((thedate, date_rotas))
 
     # now organise
@@ -107,13 +119,22 @@ def parse_data(text):
             names = []
             rota = rotas.get(team_name)
             if rota:
-                for role, name in list(rota.items()):
-                    for lead_role in LEAD_ROLES:
-                        if lead_role in role.lower():
-                            names.append(name)
-                if not names:
+                rota.sort(key=lambda x: x['role'])
+                included = []
+                for member in rota:
+                    if is_leader_role(member['role']):
+                        included.append(member)
+                if not included:
                     # No leader match - just use all of them
-                    names = list(rota.values())
+                    included = rota
+                for member in included:
+                    name = member['name']
+                    if member['role'].lower() in EXCLUDE_ROLES:
+                        continue
+                    elif member['role'] and not \
+                            is_leader_role(member['role']):
+                        name += ' ({})'.format(member['role'])
+                    names.append(name)
             row.append(', '.join(names))
         dataset.append(row)
     return dataset
@@ -200,11 +221,20 @@ def write_next(dataset, sheetid, churchname,
 <p><em>
   Further detail on all rotas is available in <a href="{sheeturl}">this google sheet</a>
 </em></p>
+<p>
+Please note:
+<br />
+- Only non-leader roles are included after names
+<br />
+- People with the following roles are excluded from this report: {excluded}
+<br />
+</p>
 """.format(table=next_dataset.html,
            churchsuiteurl='https://{}.churchsuite.co.uk/modules/rotas/'.format(
                churchname),
            sheeturl=SHEETS_ROOT_URL + sheetid,
-           nicedate=nicedate)
+           nicedate=nicedate,
+           excluded=', '.join(EXCLUDE_ROLES))
         message = emails.html(
             html=html,
             subject='[{}] Sunday Roles {}'.format(site_name, nicedate),
