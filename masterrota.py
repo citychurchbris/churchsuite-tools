@@ -8,9 +8,9 @@ import emails
 import requests
 import tablib
 from lxml import html
+from terminaltables import AsciiTable
 
 import drive
-from terminaltables import AsciiTable
 
 CA_DATE_FORMAT = '%d-%m-%Y'
 SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
@@ -26,21 +26,16 @@ def is_leader_role(role):
     return False
 
 
-def fetch_overview(churchname, username, password, year=None, siteid=None):
-    if year is None:
-        now = datetime.now()
-        fromdate = datetime.now().strftime(CA_DATE_FORMAT)
-        todate = (now + timedelta(days=365)).strftime(CA_DATE_FORMAT)
-    else:
-        fromdate = '01-01-{}'.format(year)
-        todate = '01-01-{}'.format(year+1)
-    print('Fetching rotas from {} to {}'.format(fromdate, todate))
-
+def login(churchname, username, password, siteid=None):
+    """
+    Login to churchsuite
+    """
     site_switcher_url = 'https://{churchname}.churchsuite.co.uk/ajax/site'
-    report_url = "https://{churchname}.churchsuite.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
     login_url = "https://login.churchsuite.com/"
-    s = requests.Session()
-    login_response = s.post(
+    print('Logging in via {}'.format(login_url))
+
+    session = requests.Session()
+    login_response = session.post(
         login_url,
         data={
             'username': username,
@@ -54,21 +49,39 @@ def fetch_overview(churchname, username, password, year=None, siteid=None):
     if login_response.url == login_url:
         print('Error - login failed!')
         sys.exit(1)
+    print('Login OK')
     if siteid is not None:
         print('Switching site to: {}'.format(siteid))
-        response = s.put(
+        session.put(
             site_switcher_url.format(churchname=churchname),
             data={
                 'site_id': siteid,
             },
         )
+    return session
+
+
+def fetch_overview(churchname, username, password, year=None, siteid=None):
+    report_url = "https://{churchname}.churchsuite.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
+
+    if year is None:
+        now = datetime.now()
+        fromdate = datetime.now().strftime(CA_DATE_FORMAT)
+        todate = (now + timedelta(days=365)).strftime(CA_DATE_FORMAT)
+    else:
+        fromdate = '01-01-{}'.format(year)
+        todate = '01-01-{}'.format(year+1)
+    print('Fetching rotas from {} to {}'.format(fromdate, todate))
+
+    session = login(churchname, username, password, siteid)
+
     url = report_url.format(
         churchname=churchname,
         fromdate=fromdate,
         todate=todate,
     )
     print('Running report: {}'.format(url))
-    response = s.get(url)
+    response = session.get(url)
     return response.text
 
 
