@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+chardet = "*"
+cssselect = "*"
+cssutils = "*"
+emails = "*"
+google-api-python-client = "*"
+"httplib2" = "*"
+lxml = "*"
+"oauth2client" = "*"
+premailer = "*"
+"pyasn1" = "*"
+"pyasn1-modules" = "*"
+python-dateutil = "*"
+requests = "*"
+rsa = "*"
+six = "*"
+tablib = "*"
+terminaltables = "*"
+uritemplate = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"
