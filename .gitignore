@@ -1,5 +1,4 @@
-venv
-*.json
+/*.json
 .credentials
 example.html
-drive_client_secret.json
+/drive_client_secret.json
