@@ -1,12 +1,10 @@
-import httplib2
+import argparse
 import os
 
+import httplib2
 from apiclient import discovery
-from oauth2client import client
-from oauth2client import tools
+from oauth2client import client, tools
 from oauth2client.file import Storage
-
-import argparse
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
@@ -51,3 +49,10 @@ def get_service():
     service = discovery.build('sheets', 'v4', http=http,
                               discoveryServiceUrl=discoveryUrl)
     return service
+
+
+if __name__ == "__main__":
+    """
+    If run from command line, initiate oath2 setup
+    """
+    creds = get_credentials()
