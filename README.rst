@@ -55,7 +55,7 @@ It will also create an overview sheet in the same document with details for the
 
 It will also optionally generate an email summary of rotas for 'next' Sunday
 
-#. Create a config file using `config-examples/masterrota.example.json` as a guide. You need to provide your churchsuite login details, a reference to the google sheet for output, and smtp credentials for the summary email.
+#. Create a config file using `config-examples/masterrota.example.json`_ as a guide. You need to provide your churchsuite login details, a reference to the google sheet for output, and smtp credentials for the summary email.
 
 .. include:: config-examples/masterrota.example.json
    :code: js
@@ -111,3 +111,4 @@ from ChurchSuite.
 .. _pipenv: https://docs.pipenv.org/
 .. _`ChurchSuite API`: https://github.com/ChurchSuite/churchsuite-api
 .. _`config-examples/tagalert.example.json`: config-examples/tagalert.example.json
+.. _`config-examples/masterrota.example.json`: config-examples/masterrota.example.json
