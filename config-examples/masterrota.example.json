@@ -1,18 +1,18 @@
 {
-    "churchname": "mychurch",
-    "username": "admin",
-    "password": "",
-    "google_sheet_id": "",
-    "site_id": "1",
-    "site_name": "My Church Main Site",
+    "churchname": "<churchsuite-church-id>",
+    "username": "<churchsuite-login>",
+    "password": "<churchsuite-password>",
+    "site_id": "<churchsuite-site-id>",
+    "site_name": "<display-name>",
+    "google_sheet_id": "<output-google-sheet-id>",
     "notify": [
-        "admin@mychurch.com"
+        "<notification-email-address>"
     ],
     "smtp":{
-        "host": "smtp.mychurch.com",
+        "host": "<smtp-server-host>",
         "ssl": true,
         "port": 465,
-        "user": "admin@mychurch.com",
-        "password": ""
+        "user": "<smtp-server-user>",
+        "password": "<smtp-server-password>"
     }
 }

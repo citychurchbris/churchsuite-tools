@@ -1,0 +1,15 @@
+{
+    "tagid": "<tag id>",
+    "account": "<account>.churchsuite.co.uk",
+    "apikey": "",
+    "subscribers": [
+        "joe@yourdomain.com"
+    ],
+    "smtp":{
+        "host": "<email-host>",
+        "ssl": true,
+        "port": 465,
+        "user": "<smtp-user>",
+        "password": "<smtp-password>"
+    }
+}

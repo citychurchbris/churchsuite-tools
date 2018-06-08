@@ -1,34 +1,10 @@
 #!/usr/bin/python3
-"""
-TAG ALERT
-
-Notifications for users who match a specific tag on ChurchSuite
-
-Usage:
-> python tagalert.py myconfig.json
-
-myconfig.json:
-{
-    "tagid": <tag id>,
-    "account": <account>.churchsuite.co.uk,
-    "apikey": "",
-    "subscribers": [
-        'joe@yourdomaib.com'
-    ],
-    "smtp":{
-        "host": <email-host>,
-        "ssl": true,
-        "port": 465,
-        "user": "<smtp-user>",
-        "password": "<smtp-password>"
-    }
-}
-"""
 import json
 import sys
 
-import emails
 import requests
+
+import emails
 
 API_ROOT = 'https://api.churchsuite.co.uk/v1'
 CONTACT_URL_TEMPLATE = (
