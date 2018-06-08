@@ -84,7 +84,7 @@ Notifications for users who match a specific tag on ChurchSuite.
 
 This uses the official `ChurchSuite API`_ and requires an API key.
 
-#. Set up a config file as per the example, using your `ChurchSuite API`_ key:
+#. Set up a config file as per the example in `config-examples/tagalert.example.json`, using your `ChurchSuite API`_ key:
 
    .. include:: config-examples/tagalert.example.json
        :code: js
