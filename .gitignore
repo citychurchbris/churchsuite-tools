@@ -2,3 +2,4 @@
 .credentials
 example.html
 /drive_client_secret.json
+.venv
