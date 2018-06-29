@@ -2,9 +2,8 @@
 import json
 import sys
 
-import requests
-
 import emails
+import requests
 
 API_ROOT = 'https://api.churchsuite.co.uk/v1'
 CONTACT_URL_TEMPLATE = (
@@ -115,7 +114,7 @@ if __name__ == "__main__":
     contacts = data['contacts']
     tag_name = data['name']
 
-    total = int(data['no_contacts'] or 0)
+    total = int(data['tag_no_contacts'] or 0)
     if total <= 0:
         print('No contacts found for tag: {}'.format(
             tag_name,
