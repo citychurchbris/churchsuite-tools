@@ -2,7 +2,7 @@
 import json
 import sys
 from datetime import datetime
-from string import ascii_letters
+from string import ascii_uppercase
 
 import dateutil
 import drive
@@ -145,8 +145,9 @@ def update_sheet_numbers(sheetid, attendance_data):
             continue
 
         # Look up the column letter for this meeting
-        meeting_column = ascii_letters[heading_row.index(
-            meeting_name)].upper()
+        meeting_column = ascii_uppercase[
+            heading_row.index(meeting_name)
+        ]
 
         for groupname, attendance_value in meeting_attendance.items():
             try:
