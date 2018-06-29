@@ -17,6 +17,11 @@ def get_timestamp():
     return datetime.now().strftime('%Y-%m-%d %H:%M')
 
 
+def get_text(elem):
+    """Grab cleaned text from an etree element"""
+    return elem.text_content().strip()
+
+
 def get_attendance(churchname, username, password, date, siteid=None):
     """
     Get attendance figures for the given date
@@ -33,28 +38,30 @@ def get_attendance(churchname, username, password, date, siteid=None):
     )
 
     session = login(churchname, username, password, siteid)
+
+    print('Reading attendance figures from {}'.format(attendance_url))
     response = session.get(attendance_url)
 
     tree = html.fromstring(response.content)
-    rows = tree.cssselect('div.week-category')
+    site_rows = tree.cssselect('div.week-category')
 
-    attendance = []
-    for row in rows:
-        meeting = row.cssselect('h3')[0].text_content().strip()
-        numbers = row.cssselect(
-            'tfoot td.attendance')[0].text_content().strip()
-        try:
-            numbers = int(numbers)
-        except ValueError:
-            # no value
-            continue
-        if not numbers:
-            continue
-
-        attendance.append({
-            'meeting_name': meeting,
-            'numbers': int(numbers),
-        })
+    attendance = {}
+    for site_row in site_rows:
+        meeting_name = get_text(site_row.cssselect('h3')[0])
+        meeting_data = {}
+        attendance_entries = site_row.cssselect('tr')
+        for entry in attendance_entries:
+            groupname = get_text(entry.cssselect('td.group')[0])
+            try:
+                attendance_value = int(
+                    get_text(entry.cssselect('td.attendance')[0])
+                )
+            except ValueError:
+                # Ignore - no value
+                continue
+            else:
+                meeting_data[groupname] = attendance_value
+        attendance[meeting_name] = meeting_data
     return attendance
 
 
@@ -96,7 +103,7 @@ def update_cell(sheetid, cellref, data):
     ).execute()
 
 
-def update_sheet_date(sheetid, thedate):
+def update_sheet_dates(sheetid, thedate):
     update_cell(
         sheetid,
         "'Last Sunday Summary'!B2",
@@ -109,32 +116,60 @@ def update_sheet_date(sheetid, thedate):
     )
 
 
-def update_numbers(sheetid, numbers):
+def find_row_by_label(rows, label):
+    """
+    Pull a single row from tabular data (rows and columns aka a list of lists)
+    using the value of the first column
+    """
+    for row_num, row in enumerate(rows, start=1):
+        if row[0] == label:
+            return row_num, row
+
+
+def update_sheet_numbers(sheetid, attendance_data):
     service = drive.get_service()
     sheet_data = service.spreadsheets().values().get(
         spreadsheetId=sheetid,
         range="Last Sunday Summary",
     ).execute()
 
-    for row_index, row in enumerate(sheet_data['values']):
-        if row[0] == 'Attendance':
-            targetrow = row_index + 2
-            for meeting in numbers:
-                if meeting['meeting_name'] in row:
-                    col = ascii_letters[row.index(
-                        meeting['meeting_name'])].upper()
-                    print('Writing {} to {}{}'.format(
-                        meeting['numbers'], col, targetrow,
-                    ))
-                    update_cell(
-                        sheetid,
-                        "'Last Sunday Summary'!{col}{row}".format(
-                            col=col,
-                            row=targetrow,
-                        ),
-                        meeting['numbers'],
-                    )
-            return
+    sheet_rows = sheet_data['values']
+
+    _, heading_row = find_row_by_label(sheet_rows, 'Attendance')
+
+    for meeting_name, meeting_attendance in attendance_data.items():
+        if meeting_name not in heading_row:
+            print('Skipping meeting not in output sheet: {}'.format(
+                meeting_name,
+            ))
+            continue
+
+        # Look up the column letter for this meeting
+        meeting_column = ascii_letters[heading_row.index(
+            meeting_name)].upper()
+
+        for groupname, attendance_value in meeting_attendance.items():
+            try:
+                group_row_num, _ = find_row_by_label(sheet_rows, groupname)
+            except TypeError:
+                print('Skipping group not in output sheet: {}'.format(
+                    groupname,
+                ))
+                continue
+
+            # print('Writing {} to {}{}'.format(
+            #     attendance_value,
+            #     meeting_column,
+            #     group_row_num,
+            # ))
+            update_cell(
+                sheetid,
+                "'Last Sunday Summary'!{col}{row}".format(
+                    col=meeting_column,
+                    row=group_row_num,
+                ),
+                attendance_value,
+            )
 
 
 if __name__ == "__main__":
@@ -147,37 +182,46 @@ if __name__ == "__main__":
     with open(configfile, 'r') as f:
         config = json.load(f)
 
+    sheetid = config['google_sheet_id']
+
     now = datetime.now()
     last_sunday = (
         now + relativedelta.relativedelta(
             weekday=relativedelta.SU(-1))
     ).date()
 
-    last_sunday = datetime(2017, 9, 10)
+    last_sunday = datetime(2018, 6, 17)
 
     print('Sunday review for last sunday ({})'.format(
         last_sunday,
     ))
 
-    att = get_attendance(
+    attendance = get_attendance(
         config['churchname'],
         config['username'],
         config['password'],
         last_sunday,
     )
 
-    sheetid = config['google_sheet_id']
-
-    if not att:
+    if not attendance:
         print('No attendance figures')
-    for meeting in att:
+    for meeting_name, meeting_attendance in attendance.items():
         print(
-            '{meeting_name}:\t{numbers}'.format(
-                **meeting
+            '{meeting_name}:\t{total}'.format(
+                meeting_name=meeting_name,
+                total=meeting_attendance.get('Total'),
             )
         )
 
-    update_numbers(sheetid, att)
+    # Update the sunday heading and timestamp
+    update_sheet_dates(
+        sheetid,
+        last_sunday,
+    )
+
+    # Write attendance to the google sheet
+    sheetid = config['google_sheet_id']
+    update_sheet_numbers(sheetid, attendance)
 
     responses = get_responses(
         sheetid,
@@ -189,10 +233,5 @@ if __name__ == "__main__":
         print('Responses: ')
         for response in responses:
             print(', '.join(response))
-
-    update_sheet_date(
-        sheetid,
-        last_sunday,
-    )
 
     print('Changes written to: {}{}'.format(SHEETS_ROOT_URL, sheetid))
