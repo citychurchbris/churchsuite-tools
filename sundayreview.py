@@ -21,7 +21,6 @@ def get_text(elem):
     """Grab cleaned text from an etree element"""
     return elem.text_content().strip()
 
-
 def get_attendance(churchname, username, password, date, siteid=None):
     """
     Get attendance figures for the given date
@@ -86,6 +85,27 @@ def get_responses(sheetid, range_name, date):
             responses.append(row)
 
     return responses
+
+
+def clear_sheet(sheetid, test_func):
+    service = drive.get_service()
+    sheet_data = service.spreadsheets().values().get(
+        spreadsheetId=sheetid,
+        range="Last Sunday Summary",
+    ).execute()
+
+    sheet_rows = sheet_data['values']
+    for rindex, row in enumerate(sheet_rows, start=1):
+        for cindex, col in enumerate(row):
+            if test_func(col):
+                colname = ascii_uppercase[cindex]
+                update_cell(
+                    sheetid,
+                    "'Last Sunday Summary'!{col}{row}".format(
+                        col=colname,
+                        row=rindex,
+                    ),
+                    '')
 
 
 def update_cell(sheetid, cellref, data):
@@ -213,6 +233,17 @@ if __name__ == "__main__":
                 total=meeting_attendance.get('Total'),
             )
         )
+
+    def isnum(data):
+        try:
+            int(data)
+        except ValueError:
+            return False
+        else:
+            return True
+
+    # Clear numbers from sheet
+    clear_sheet(sheetid, isnum)
 
     # Update the sunday heading and timestamp
     update_sheet_dates(
