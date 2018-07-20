@@ -298,6 +298,10 @@ if __name__ == "__main__":
             siteid=config.get('site_id', None),
         )
     dataset = parse_data(overview)
+    if not (dataset and len(dataset)):
+        print('Error: no data was parsed!!')
+        sys.exit(1)
+
     write_overview(dataset, config['google_sheet_id'])
     write_next(
         dataset,
