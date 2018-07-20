@@ -4,15 +4,15 @@ import sys
 from datetime import datetime, timedelta
 
 import dateutil.parser
+import drive
 import emails
 import requests
 import tablib
 from lxml import html
 from terminaltables import AsciiTable
 
-import drive
-
 CA_DATE_FORMAT = '%d-%m-%Y'
+CA_AJAX_DATE_FORMAT = '%Y-%m-%d'
 SHEETS_ROOT_URL = 'https://docs.google.com/spreadsheets/d/'
 LEAD_ROLES = ['leader', 'preacher', ]
 EXCLUDE_ROLES = ['reserve', ]
@@ -63,22 +63,26 @@ def login(churchname, username, password, siteid=None):
 
 def fetch_overview(churchname, username, password, year=None, siteid=None):
     report_url = "https://{churchname}.churchsuite.co.uk/modules/rotas/reports/rotas_overview.php?date_start={fromdate}&date_end={todate}&order_by=default&submit_btn=Generate"  # noqa
+    ajax_report_url = "https://{churchname}.churchsuite.co.uk/ajax/rotas/rajax?date_start={fromdate}&date_end={todate}&order_by=default&break_page_on_week=off&show_empty_dates=off&show_members_table=off&page=1&submit_btn=Generate&pg=rotas_overview&view=dates"  # noqa
 
     if year is None:
         now = datetime.now()
-        fromdate = datetime.now().strftime(CA_DATE_FORMAT)
-        todate = (now + timedelta(days=365)).strftime(CA_DATE_FORMAT)
+        fromdate = datetime.now()
+        todate = (now + timedelta(days=365))
     else:
-        fromdate = '01-01-{}'.format(year)
-        todate = '01-01-{}'.format(year+1)
-    print('Fetching rotas from {} to {}'.format(fromdate, todate))
+        fromdate = datetime(year, 1, 1)
+        todate = datetime(year+1, 1, 1)
+
+    print('Fetching rotas from {} to {}'.format(
+        fromdate.date(), todate.date()
+    ))
 
     session = login(churchname, username, password, siteid)
 
-    url = report_url.format(
+    url = ajax_report_url.format(
         churchname=churchname,
-        fromdate=fromdate,
-        todate=todate,
+        fromdate=fromdate.strftime(CA_AJAX_DATE_FORMAT),
+        todate=todate.strftime(CA_AJAX_DATE_FORMAT),
     )
     print('Running report: {}'.format(url))
     response = session.get(url)
@@ -94,10 +98,13 @@ def parse_data(text):
     master = []
     team_names = []
     tree = html.fromstring(text)
-    report = tree.cssselect('section.report')[0]
 
     # First pass to read data
-    dates = report.cssselect('.row h2.report_break')
+    dates = tree.cssselect('.rota-section h2.report_break')
+    if not dates:
+        print('Error: No dates found')
+        return
+
     for el in dates:
         date_rotas = {}
         datetext = el.text_content()
@@ -108,7 +115,7 @@ def parse_data(text):
 
         rotas = el.getparent().cssselect('div.rota-date')
         for rota in rotas:
-            team = grab_text(rota, 'span.date-team')
+            team = grab_text(rota, '.date-rota-name')
             if team not in team_names:
                 team_names.append(team)
             date_rotas[team] = []
@@ -150,6 +157,7 @@ def parse_data(text):
                     names.append(name)
             row.append(', '.join(names))
         dataset.append(row)
+
     return dataset
 
 
